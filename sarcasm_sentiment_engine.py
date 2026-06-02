@@ -291,7 +291,7 @@ class LexicalSentimentEngine:
 if __name__ == "__main__":
     # --- INTERACTIVE USER INPUT TEST ---
     print("=" * 60)
-    print("        LEXICAL SENTIMENT ENGINE TERMINAL TESTER        ")
+    print("        SARCASM SENTIMENT ENGINE TERMINAL TESTER        ")
     print("=" * 60)
     
     print("Initializing engine and parsing configuration files...")
