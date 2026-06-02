@@ -1,0 +1,49 @@
+{
+  "global_settings": {
+    "memory_limit": 2,
+    "leading_chunk_size": 65,
+    "irony_floor_penalty": -0.70,
+    "sentiment_threshold": 0.05,
+    "conditional_multiplier": 1.5,
+    "negative_backdrop_triggers": [
+      "scandal",
+      "corruption",
+      "debacle",
+      "disaster",
+      "crisis",
+      "tension",
+      "ruin",
+      "collapse",
+      "failure",
+      "stagnation",
+      "destruction",
+      "recession",
+      "bankruptcy",
+      "implosion",
+      "gridlock"
+    ]
+  },
+  "sarcasm_cues": [
+    "oh great",
+    "brilliant victory",
+    "flawless masterclass",
+    "perfectly timed",
+    "so well!!",
+    "what a surprise",
+    "how shocking",
+    "truly inspiring",
+    "masterful political strategy",
+    "pure genius",
+    "outstanding leadership",
+    "an absolute triumph",
+    "what a shocking turn of events",
+    "totally predictable",
+    "working wonders",
+    "clearly a spectacular success",
+    "shockingly competent",
+    "amazing job",
+    "bravo",
+    "stunning move",
+    "visionary governance"
+  ]
+}
