@@ -1,88 +1,184 @@
 # 🎭 Sarcasm Sentiment Engine (SSE)
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![NLP-spaCy](https://img.shields.io/badge/NLP-spaCy-green.svg)](https://spacy.io/)
-[![Sentiment-VADER](https://img.shields.io/badge/Sentiment-NLTK_VADER-orange.svg)](https://www.nltk.org/)
+> **Entity-aware political sentiment analysis pipeline** — tracks named entities through news text, resolves pronoun coreference, detects sarcasm, and generates a structured sentiment report. No ML models, pure linguistic architecture.
 
-Standard sentiment tools are easily deceived by ironic context. Passing a phrase like *"Oh great, another flawless masterclass in economic policy, if our ultimate goal was total financial ruin,"* causes traditional lexicons to analyze words like "flawless" and "masterclass" standalone, incorrectly scoring the sentence with a positive sentiment baseline. 
-
-**Sarcasm Sentiment Engine (SSE)** is an advanced, domain-specific NLP pipeline optimized to evaluate political media text. By combining **spaCy's dynamic coreference parsing** with a **dual-layer sarcasm inversion matrix**, SSE tracks shifting media stances toward specific political targets and accurately neutralizes deceptive linguistic phrasing.
-
----
-
-## ⚡ Core Engineering Highlights
-
-* **Dynamic Stream Tracking (Look-Ahead Window):** Traditional lexical engines drop tracking context the moment text transitions to pronouns (*he, she, his, their*). SSE implements a character-cleansed token validation window to maintain entity-narrative alignment across multi-sentence streams.
-* **Institutional Context Retrieval (Look-Back Mapping):** Political media columns frequently use negative backdrops targeting an *administration*, *leadership*, or *department* before explicitly naming an individual leader. SSE captures this preceding background context to generate balanced macro evaluations.
-* **Conditional Sarcasm Inversion:** Features a structural regex monitor designed to identify "sting-in-the-tail" text configurations, dynamically flipping false-positive lexical signals into descriptive penalties when coupled with structural political fallout terms.
-* **Textual Irony Detection:** Evaluates typographical sarcasm layouts, monitoring for mixed capitalization density anomalies and explicit exclamation clustering (`!!`) against globally verified toxic themes.
-* **Self-Healing Dependencies:** Built with zero-friction initialization boundaries. Missing third-party lexicon components are automatically verified and fetched silently at runtime without requiring manual environment preparation.
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
+[![spaCy](https://img.shields.io/badge/NLP-spaCy-09A3D5?style=flat-square)](https://spacy.io/)
+[![NLTK VADER](https://img.shields.io/badge/Sentiment-NLTK_VADER-orange?style=flat-square)](https://www.nltk.org/)
+[![HuggingFace](https://img.shields.io/badge/Lexicons-Config_Driven-yellow?style=flat-square)](https://github.com/)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![Status](https://img.shields.io/badge/status-complete-brightgreen?style=flat-square)
 
 ---
 
-## 🛠️ Architecture Blueprint
+## What is this?
 
-```text
-[ Raw Article Text ] ──> [ spaCy Tokenization ]
-                               │
-                               ▼
-               [ Evidence Tracking Windows ]
-               ├── Look-Back: Institutional Clues
-               └── Look-Ahead: Cleansed Pronoun Stream
-                               │
-                               ▼
-               [ Polarity Analysis Engine ]
-               ├── Custom Political Lexicon Updates
-               └── Sarcasm & Irony Inversion Checkers
-                               │
-                               ▼
-               [ Clean ASCII Table Matrix Output ]
+Most sentiment tools score an entire article and stop there. SSE tracks **a specific named entity** through a news paragraph — resolving pronouns, following institutional references, and detecting sarcasm — then scores only the sentences actually *about* that entity.
+
+```
+Enter News Paragraph:
+> The administration promised reform. They delivered a flawless masterclass in gridlock.
+
+Enter Political Entity:
+> administration
+
+═══════════════════════════════════════════════════════════════
+POLITICAL SENTIMENT REPORT: ADMINISTRATION
+OVERALL STANCE: NEGATIVE (-0.6231)
+═══════════════════════════════════════════════════════════════
+Sentence Evidence                                  | Sarcasm? | Sentiment  | Score
+-----------------------------------------------------------
+The administration promised reform.                | No       | POSITIVE   | 0.2960
+They delivered a flawless masterclass in gridlock. | Yes      | NEGATIVE   | -0.7100
+═══════════════════════════════════════════════════════════════
 ```
 
-## 🚀 Getting Started
+---
 
-### 1. Prerequisites
-Ensure you have Python 3.10+ installed on your system.
+## Features
 
-### 2. Installation
-Clone this repository locally and install the mandatory natural language processing frameworks:
-```bash
-git clone [https://github.com/your-github-profile/sarcasm_sentiment_engine.git](https://github.com/your-github-profile/sarcasm_sentiment_engine.git)
-cd sarcasm_sentiment_engine
-pip install spacy nltk
+- **Entity-aware evidence extraction** — isolates only sentences relevant to the target entity, not the full article
+- **Three-stage coreference window** — tracks pronouns and institutional synonyms that refer back to the target across sentence boundaries
+- **Sarcasm detection** — surface cue matching, structural marker detection (ALL-CAPS + `!!`), and conditional regex patterns (`if X... disaster`)
+- **Domain lexicons** — custom VADER score overrides for political and financial vocabulary via `domain_lexicons.json`
+- **Fully config-driven** — all thresholds, penalties, cues, and triggers live in `engine_settings.json`; tune behavior without touching code
+- **Multi-domain support** — switch between political and finance lexicon profiles
+
+---
+
+## How It Works
+
+The engine runs three core linguistic stages:
+
+### 1. Evidence Extraction (The "Lexicon" Layer)
+Three-condition sentence collector:
+- **Condition A** — sentence directly names the target entity → include
+- **Condition B** — sentence contains an institutional synonym before the entity appears → include as context setup
+- **Condition C** — sentence follows a matched sentence and starts with a tracked pronoun → include via coreference window
+
+### 2. Sarcasm Detection (The "Heuristic" Layer)
+Three independent sarcasm signals, checked per sentence:
+- **Cue matching** — surface phrase list from `engine_settings.json` (e.g. "flawless masterclass", "oh great")
+- **Structural markers** — `!!` combined with ALL-CAPS words signals exaggerated irony
+- **Conditional regex** — pattern `if [X]... [disaster-word]` with a positive base score triggers a sentiment flip
+
+All signals are gated by a **negative backdrop check** — sarcasm only fires if the article contains at least one global crisis word, preventing false flips in genuinely positive articles.
+
+### 3. Scoring (The "Engine" Layer)
+VADER compound score per sentence, adjusted by:
+- Domain lexicon overrides (political/financial vocabulary)
+- Sarcasm flip: positive score → `−|score|`
+- Irony floor penalty if flipped score is too mild
+- Conditional sarcasm multiplier for regex-triggered flips
+
+---
+
+## Project Structure
+
 ```
-Compile the lightweight spaCy English linguistic parser:
+sarcasm_sentiment_engine/
+├── sarcasm_sentiment_engine.py   # Core engine + CLI entry point
+├── domain_lexicons.json          # Political & finance VADER overrides + institutional synonyms
+├── engine_settings.json          # All thresholds, cues, penalties, and triggers
+└── requirements.txt
+```
+
+The engine is deliberately config-driven — `sarcasm_sentiment_engine.py` contains only logic, never hardcoded values.
+
+---
+
+## Tech Stack
+
+| Layer | Library |
+|-------|---------|
+| Named Entity Recognition & tokenization | `spaCy` (en_core_web_sm) |
+| Base sentiment scoring | `NLTK VADER` |
+| Regex pattern matching | `re` (stdlib) |
+| Config loading | `json` (stdlib) |
+
+---
+
+## Getting Started
+
+### 1. Install dependencies
+
 ```bash
+pip install -r requirements.txt
 python -m spacy download en_core_web_sm
+python -m nltk.downloader vader_lexicon
 ```
-### 3. Run the Interactive Engine
-Launch the main script execution loop to process live custom paragraphs and target entities directly via your console terminal:
+
+### 2. Run the engine
+
 ```bash
-python "sarcasm_sentiment_engine.py"
+python sarcasm_sentiment_engine.py
 ```
-*(Enter `0` at the prompt to exit the engine environment cleanly.)*
+
+### 3. Follow the prompts
+
+```
+Enter News Paragraph/Article Snippet:
+> [paste your text here]
+
+Enter Political Entity (Person/Party/Country):
+> [e.g. Biden, Labour Party, Treasury]
+```
+
+Press `0` to exit.
 
 ---
 
-## 📊 Evaluation Testing
+## Configuration
 
-### Test Parameter: Trailing Conditional Sarcasm
-**Input Text:**
-> *The administration’s recent economic policy has triggered a massive disaster across the manufacturing sector, resulting in unprecedented stagnation and a severe deficit crisis. Yet, party leadership remains completely oblivious to the public backlash growing outside parliament. Oh great, another brilliant victory for the administration. The Prime Minister is executing a flawless masterclass in economic stability, if our ultimate goal as a nation was total financial ruin.*
+### `engine_settings.json`
 
-**Target Entity Keyword:** `The Prime Minister`
+| Parameter | What it controls |
+|-----------|-----------------|
+| `memory_limit` | How many sentences the pronoun tracking window stays open after a match |
+| `leading_chunk_size` | Character window scanned for pronoun subjects at sentence start |
+| `irony_floor_penalty` | Minimum negative score applied when sarcasm flips a weak positive |
+| `sentiment_threshold` | Boundary between POSITIVE / NEUTRAL / NEGATIVE labels |
+| `conditional_multiplier` | Score amplifier for regex-triggered conditional sarcasm |
+| `negative_backdrop_triggers` | Words that activate global sarcasm gating for the article |
+| `sarcasm_cues` | Surface phrase list for direct sarcasm detection |
 
-**ASCII Matrix Report Output:**
-```text
-====================================================================================================
-POLITICAL SENTIMENT REPORT: THE PRIME MINISTER
-OVERALL STANCE            : NEGATIVE (-0.5983)
-====================================================================================================
-Sentence Evidence                                                 | Sarcasm? | Sentiment  | Score
-----------------------------------------------------------------------------------------------------
-The administration’s recent economic policy has triggered a ma..  | No       | NEGATIVE   | -0.9403
-Yet, party leadership remains completely oblivious to the publ..  | No       | NEGATIVE   | -0.4391
-Oh great, another brilliant victory for the administration.       | Yes      | NEGATIVE   | -0.836
-The Prime Minister is executing a flawless masterclass in econ..  | Yes      | NEGATIVE   | -0.1779
-====================================================================================================
-```
+### `domain_lexicons.json`
+
+Add or edit domain profiles under `political` or `finance`. Each domain has:
+- `lexicon` — word → VADER score override pairs
+- `institutional_synonyms` — terms treated as stand-ins for the target entity
+
+To add a new domain (e.g. sports), add a new top-level key with the same structure and load it in the engine constructor.
+
+---
+
+## Design Decisions
+
+**Why no ML model?**
+This project was built deliberately rule-based to understand the linguistic problem from first principles. The ceiling of this approach — sarcasm that doesn't match surface cues, context-dependent irony — directly motivates why transformer models exist. Consider this the architectural foundation for a future hybrid system.
+
+**Why config-driven?**
+Hardcoded thresholds and lexicons make tuning impossible without reading code. Externalizing them lets you adjust behavior for a new domain, test edge cases, or hand the project to someone else without touching the engine logic.
+
+---
+
+## Roadmap
+
+- [ ] Transformer sarcasm layer — replace cue matching with `cardiffnlp/twitter-roberta-base-irony`
+- [ ] Multi-entity tracking in one pass
+- [ ] Web UI / Streamlit interface
+- [ ] Support for longer articles with paragraph-level chunking
+- [ ] Sports and legal domain lexicons
+
+---
+
+## Limitations
+
+- Sarcasm detection relies on surface cues — novel irony patterns not in the cue list will be missed
+- Negative backdrop check is article-wide, not sentence-local — may cause false flips in mixed-tone articles
+- Coreference resolution is heuristic (pronoun + position), not structural — complex multi-paragraph chains may break
+- Works best on political and financial news; other domains need a new lexicon profile
+
+---
+
+*Built as a rule-based NLP project to explore entity-aware sentiment analysis and the linguistic boundaries of lexicon-driven sarcasm detection.*
