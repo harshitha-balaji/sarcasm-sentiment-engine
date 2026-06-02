@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# spaCy model cache
+en_core_web_sm/
+
+# NLTK data
+nltk_data/
+
+# Generated map outputs (Earth Observation Engine)
+output_maps/
