@@ -1,11 +1,11 @@
 # 🎭 Sarcasm Sentiment Engine (SSE)
 
-> **Entity-aware political sentiment analysis pipeline** — tracks named entities through news text, resolves pronoun coreference, detects sarcasm, and generates a structured sentiment report. No ML models, pure linguistic architecture.
+> **Domain-aware, entity-tracking NLP engine** — follows a named entity through news text, resolves pronoun coreference, detects sarcasm, and scores only the sentences that are actually *about* that entity. No ML models. Pure linguistic architecture.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
 [![spaCy](https://img.shields.io/badge/NLP-spaCy-09A3D5?style=flat-square)](https://spacy.io/)
 [![NLTK VADER](https://img.shields.io/badge/Sentiment-NLTK_VADER-orange?style=flat-square)](https://www.nltk.org/)
-[![HuggingFace](https://img.shields.io/badge/Lexicons-Config_Driven-yellow?style=flat-square)](https://github.com/)
+![Config](https://img.shields.io/badge/architecture-config--driven-yellow?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Status](https://img.shields.io/badge/status-complete-brightgreen?style=flat-square)
 
@@ -13,7 +13,9 @@
 
 ## What is this?
 
-Most sentiment tools score an entire article and stop there. SSE tracks **a specific named entity** through a news paragraph — resolving pronouns, following institutional references, and detecting sarcasm — then scores only the sentences actually *about* that entity.
+Standard sentiment tools score an entire article. SSE scores a specific *entity* inside it.
+
+Give it a paragraph and a target — a politician, institution, or organisation — and it tracks that entity sentence by sentence: resolving pronouns, catching institutional synonyms, detecting sarcasm, and producing a per-sentence evidence table with a final stance verdict.
 
 ```
 Enter News Paragraph:
@@ -22,51 +24,49 @@ Enter News Paragraph:
 Enter Political Entity:
 > administration
 
-═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════════
 POLITICAL SENTIMENT REPORT: ADMINISTRATION
 OVERALL STANCE: NEGATIVE (-0.6231)
-═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════════
 Sentence Evidence                                  | Sarcasm? | Sentiment  | Score
------------------------------------------------------------
+------------------------------------------------------------------------------------
 The administration promised reform.                | No       | POSITIVE   | 0.2960
 They delivered a flawless masterclass in gridlock. | Yes      | NEGATIVE   | -0.7100
-═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════════
 ```
 
 ---
 
 ## Features
 
-- **Entity-aware evidence extraction** — isolates only sentences relevant to the target entity, not the full article
+- **Entity-aware evidence extraction** — collects only sentences relevant to the target entity, not the full article
 - **Three-stage coreference window** — tracks pronouns and institutional synonyms that refer back to the target across sentence boundaries
 - **Sarcasm detection** — surface cue matching, structural marker detection (ALL-CAPS + `!!`), and conditional regex patterns (`if X... disaster`)
 - **Domain lexicons** — custom VADER score overrides for political and financial vocabulary via `domain_lexicons.json`
 - **Fully config-driven** — all thresholds, penalties, cues, and triggers live in `engine_settings.json`; tune behavior without touching code
-- **Multi-domain support** — switch between political and finance lexicon profiles
+- **Multi-domain support** — switch between political and finance lexicon profiles; extend to any domain by adding a new profile
 
 ---
 
 ## How It Works
 
-The engine runs three core linguistic stages:
+Three sequential stages process each input:
 
-### 1. Evidence Extraction (The "Lexicon" Layer)
-Three-condition sentence collector:
+### 1. Evidence Extraction
+Three-condition sentence collector that builds the entity's evidence set:
 - **Condition A** — sentence directly names the target entity → include
 - **Condition B** — sentence contains an institutional synonym before the entity appears → include as context setup
-- **Condition C** — sentence follows a matched sentence and starts with a tracked pronoun → include via coreference window
+- **Condition C** — sentence follows a matched sentence and opens with a tracked pronoun → include via coreference window
 
-### 2. Sarcasm Detection (The "Heuristic" Layer)
-Three independent sarcasm signals, checked per sentence:
+### 2. Sarcasm Detection
+Three independent signals checked per sentence, each gated by a **negative backdrop check** — sarcasm only fires if the article contains at least one global crisis word, preventing false flips in genuinely positive text:
 - **Cue matching** — surface phrase list from `engine_settings.json` (e.g. "flawless masterclass", "oh great")
 - **Structural markers** — `!!` combined with ALL-CAPS words signals exaggerated irony
 - **Conditional regex** — pattern `if [X]... [disaster-word]` with a positive base score triggers a sentiment flip
 
-All signals are gated by a **negative backdrop check** — sarcasm only fires if the article contains at least one global crisis word, preventing false flips in genuinely positive articles.
-
-### 3. Scoring (The "Engine" Layer)
+### 3. Scoring
 VADER compound score per sentence, adjusted by:
-- Domain lexicon overrides (political/financial vocabulary)
+- Domain lexicon overrides (political / financial vocabulary)
 - Sarcasm flip: positive score → `−|score|`
 - Irony floor penalty if flipped score is too mild
 - Conditional sarcasm multiplier for regex-triggered flips
@@ -78,23 +78,12 @@ VADER compound score per sentence, adjusted by:
 ```
 sarcasm_sentiment_engine/
 ├── sarcasm_sentiment_engine.py   # Core engine + CLI entry point
-├── domain_lexicons.json          # Political & finance VADER overrides + institutional synonyms
+├── domain_lexicons.json          # Domain VADER overrides + institutional synonyms
 ├── engine_settings.json          # All thresholds, cues, penalties, and triggers
 └── requirements.txt
 ```
 
-The engine is deliberately config-driven — `sarcasm_sentiment_engine.py` contains only logic, never hardcoded values.
-
----
-
-## Tech Stack
-
-| Layer | Library |
-|-------|---------|
-| Named Entity Recognition & tokenization | `spaCy` (en_core_web_sm) |
-| Base sentiment scoring | `NLTK VADER` |
-| Regex pattern matching | `re` (stdlib) |
-| Config loading | `json` (stdlib) |
+`sarcasm_sentiment_engine.py` contains only logic — never hardcoded values. All operational parameters live in config.
 
 ---
 
@@ -120,8 +109,8 @@ python sarcasm_sentiment_engine.py
 Enter News Paragraph/Article Snippet:
 > [paste your text here]
 
-Enter Political Entity (Person/Party/Country):
-> [e.g. Biden, Labour Party, Treasury]
+Enter Political Entity (Person/Party/Institution):
+> [e.g. Treasury, Labour Party, Fed]
 ```
 
 Press `0` to exit.
@@ -144,41 +133,39 @@ Press `0` to exit.
 
 ### `domain_lexicons.json`
 
-Add or edit domain profiles under `political` or `finance`. Each domain has:
+Domain profiles live under `political` or `finance`. Each profile contains:
 - `lexicon` — word → VADER score override pairs
 - `institutional_synonyms` — terms treated as stand-ins for the target entity
 
-To add a new domain (e.g. sports), add a new top-level key with the same structure and load it in the engine constructor.
+To add a new domain (e.g. `sports`, `legal`), add a top-level key with the same structure and load it in the engine constructor.
 
 ---
 
 ## Design Decisions
 
 **Why no ML model?**
-This project was built deliberately rule-based to understand the linguistic problem from first principles. The ceiling of this approach — sarcasm that doesn't match surface cues, context-dependent irony — directly motivates why transformer models exist. Consider this the architectural foundation for a future hybrid system.
+SSE was built rule-based deliberately — to understand the linguistic problem from first principles before reaching for a transformer. The ceiling of this approach (novel irony, context-dependent sarcasm) directly motivates why models like `cardiffnlp/twitter-roberta-base-irony` exist. The architecture is designed so that stage 2 can be swapped for a model-based classifier without touching stages 1 or 3.
 
 **Why config-driven?**
-Hardcoded thresholds and lexicons make tuning impossible without reading code. Externalizing them lets you adjust behavior for a new domain, test edge cases, or hand the project to someone else without touching the engine logic.
+Hardcoded thresholds make tuning impossible without reading engine logic. Externalising them means you can adjust behavior for a new domain, stress-test edge cases, or hand the project to someone else — without touching the core pipeline.
 
 ---
 
 ## Roadmap
 
-- [ ] Transformer sarcasm layer — replace cue matching with `cardiffnlp/twitter-roberta-base-irony`
-- [ ] Multi-entity tracking in one pass
-- [ ] Web UI / Streamlit interface
-- [ ] Support for longer articles with paragraph-level chunking
-- [ ] Sports and legal domain lexicons
+- [ ] Swap stage 2 for `cardiffnlp/twitter-roberta-base-irony` — model-based sarcasm classifier
+- [ ] Multi-entity tracking in a single pass
+- [ ] Paragraph-level chunking for full articles
+- [ ] Sports and legal domain lexicon profiles
+- [ ] Streamlit interface for non-CLI use
 
 ---
 
 ## Limitations
 
-- Sarcasm detection relies on surface cues — novel irony patterns not in the cue list will be missed
+- Sarcasm detection relies on surface cues — novel irony not in the cue list will be missed
 - Negative backdrop check is article-wide, not sentence-local — may cause false flips in mixed-tone articles
 - Coreference resolution is heuristic (pronoun + position), not structural — complex multi-paragraph chains may break
 - Works best on political and financial news; other domains need a new lexicon profile
-
 ---
-
-*Built as a rule-based NLP project to explore entity-aware sentiment analysis and the linguistic boundaries of lexicon-driven sarcasm detection.*
+*Built rule-first. The ceiling of this approach is the reason transformers exist.*
