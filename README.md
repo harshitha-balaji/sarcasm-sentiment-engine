@@ -73,6 +73,16 @@ VADER compound score per sentence, adjusted by:
 
 ---
 
+## Tech Stack
+ 
+| Layer | Library |
+|-------|---------|
+| Named entity recognition & tokenization | `spaCy` (en_core_web_sm) |
+| Base sentiment scoring | `NLTK VADER` |
+| Regex pattern matching | `re` (stdlib) |
+ 
+---
+
 ## Project Structure
 
 ```
