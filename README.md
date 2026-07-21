@@ -1,4 +1,8 @@
 # 🎭 Sarcasm Sentiment Engine (SSE)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
+[![spaCy](https://img.shields.io/badge/NLP-spaCy-09A3D5?style=flat-square)](https://spacy.io/)
+[![NLTK VADER](https://img.shields.io/badge/Sentiment-NLTK_VADER-orange?style=flat-square)](https://www.nltk.org/)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 
 > A rule-based NLP engine for entity-focused sentiment analysis using heuristic coreference, sarcasm detection, and configurable domain lexicons.
 
